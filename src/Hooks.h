@@ -3,9 +3,7 @@
 namespace Hooks
 {
     void Install() noexcept;
-    [[nodiscard]] bool HasSlowTimeEffectActive() noexcept;
-    [[nodiscard]] bool HasAttackBonusActive() noexcept;
-    void RestoreAttackDamageBonus() noexcept;
+    [[nodiscard]] bool HasShadowOpportunistEffectActive() noexcept;
 
     class SetMagicTimeSlowdown : REX::Singleton<SetMagicTimeSlowdown>
     {

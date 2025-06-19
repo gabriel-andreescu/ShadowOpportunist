@@ -9,7 +9,7 @@ A lightweight SKSE plugin that applies temporary bonuses when the player is dete
 Open terminal (e.g., PowerShell) and run the following commands:
 
 ```
-git clone --recursive https://github.com/gabriel-andreescu/ShadowOpportunist.git
+git clone --recurse-submodules -j8 https://github.com/gabriel-andreescu/ShadowOpportunist.git
 cd ShadowOpportunist
 cmake --preset=build-release
 cmake --build --preset=release

@@ -3,17 +3,15 @@
 
 namespace
 {
-    constexpr RE::FormID kSlowTimeSpellID = 0x802;
-    constexpr RE::FormID kSlowTimeSpellFeedbackID = 0x2;
-    constexpr RE::FormID kSlowTimeEffectID = 0x800;
+    constexpr RE::FormID shadowOpportunistSpellID = 0x1;
+    constexpr RE::FormID shadowOpportunistFeedbackSpellID = 0x2;
+    constexpr RE::FormID shadowOpportunistEffectID = 0x3;
     std::atomic combatThreshold{70};
-    std::atomic bonusRequested{false};
-    std::atomic attackBonusActive{false};
-    RE::SpellItem* slowTimeSpell = nullptr;
-    RE::SpellItem* slowTimeSpellFeedback = nullptr;
-    RE::EffectSetting* slowTimeEffect = nullptr;
-    std::vector<RE::BGSPerk*> g_requiredPerksAttackBonus;
-    std::vector<RE::BGSPerk*> g_requiredPerksSlowTime;
+    std::atomic applyRequested{false};
+    RE::SpellItem* shadowOpportunistSpell = nullptr;
+    RE::SpellItem* shadowOpportunistFeedbackSpell = nullptr;
+    RE::EffectSetting* shadowOpportunistEffect = nullptr;
+    std::vector<RE::BGSPerk*> requiredPerks;
 
     RE::PlayerCharacter* GetValidatedPlayer()
     {
@@ -39,28 +37,14 @@ namespace
         return magicTarget->GetActiveEffectList();
     }
 
-    bool CheckEffectPrerequisites(bool& canApplySlowTime, bool& canApplyAttackBonus)
+    bool CheckEffectPrerequisites()
     {
-        canApplySlowTime = false;
-        canApplyAttackBonus = false;
-
         const auto* player = GetValidatedPlayer();
         if (!player)
             return false;
 
-        const auto* settings = Settings::GetSingleton();
-        if (!settings->enableSlowTimeEffect && !settings->enableAttackDamageBonus) {
-            logger::debug("Effects disabled in settings");
-            return false;
-        }
-
-        canApplySlowTime = settings->enableSlowTimeEffect &&
-                           stl::has_all_required_perks(player, g_requiredPerksSlowTime);
-        canApplyAttackBonus = settings->enableAttackDamageBonus &&
-                              stl::has_all_required_perks(player, g_requiredPerksAttackBonus);
-
-        if (!canApplySlowTime && !canApplyAttackBonus) {
-            logger::debug("Missing required perks for all effects");
+        if (!stl::has_all_required_perks(player, requiredPerks)) {
+            logger::debug("Missing required perks");
             return false;
         }
 
@@ -69,7 +53,7 @@ namespace
 
     bool ValidateGameResources()
     {
-        if (!slowTimeSpell || !slowTimeSpellFeedback || !slowTimeEffect) {
+        if (!shadowOpportunistSpell || !shadowOpportunistFeedbackSpell || !shadowOpportunistEffect) {
             logger::error("Critical game resources not loaded properly");
             return false;
         }
@@ -86,9 +70,9 @@ namespace
         return true;
     }
 
-    bool ShouldApplyBonus(RE::Actor* self, RE::Actor* target)
+    bool ShouldApply(RE::Actor* self, RE::Actor* target)
     {
-        if (attackBonusActive.load(std::memory_order_relaxed) || Hooks::HasSlowTimeEffectActive()) {
+        if (Hooks::HasShadowOpportunistEffectActive()) {
             return false;
         }
 
@@ -100,17 +84,11 @@ namespace Hooks
 {
     static void ResolveRequiredPerks()
     {
-        if (auto* settings = Settings::GetSingleton(); settings->perkRequirement) {
-            g_requiredPerksAttackBonus.reserve(settings->requiredPerksAttackBonus.size());
-            g_requiredPerksSlowTime.reserve(settings->requiredPerksSlowTime.size());
+        if (auto* settings = Settings::GetSingleton(); !settings->requiredPerks.empty()) {
+            requiredPerks.reserve(settings->requiredPerks.size());
 
-            for (auto&& [plugin, id] : settings->requiredPerksAttackBonus) {
-                g_requiredPerksAttackBonus.push_back(stl::require_form<RE::BGSPerk>(plugin, id, "sAttackBonusRequiredPerks"));
-                logger::info("Resolved perk {}|0x{:06X}", plugin, id);
-            }
-
-            for (auto&& [plugin, id] : settings->requiredPerksSlowTime) {
-                g_requiredPerksSlowTime.push_back(stl::require_form<RE::BGSPerk>(plugin, id, "sSlowTimeRequiredPerks"));
+            for (auto&& [plugin, id] : settings->requiredPerks) {
+                requiredPerks.push_back(stl::require_form<RE::BGSPerk>(plugin, id, "sRequiredPerks"));
                 logger::info("Resolved perk {}|0x{:06X}", plugin, id);
             }
         }
@@ -130,17 +108,17 @@ namespace Hooks
             return result;
         };
 
-        slowTimeSpell->effects = cloneEffectsWithDuration(slowTimeSpell->effects, a_duration);
-        slowTimeSpellFeedback->effects = cloneEffectsWithDuration(slowTimeSpellFeedback->effects, a_duration);
+        shadowOpportunistSpell->effects = cloneEffectsWithDuration(shadowOpportunistSpell->effects, a_duration);
+        shadowOpportunistFeedbackSpell->effects = cloneEffectsWithDuration(shadowOpportunistFeedbackSpell->effects, a_duration);
     }
 
     void Install() noexcept
     {
-        slowTimeSpell = stl::require_form<RE::SpellItem>(Settings::pluginName, kSlowTimeSpellID);
-        slowTimeSpellFeedback = stl::require_form<RE::SpellItem>(Settings::pluginName, kSlowTimeSpellFeedbackID);
-        slowTimeEffect = stl::require_form<RE::EffectSetting>(Settings::pluginName, kSlowTimeEffectID);
+        shadowOpportunistSpell = stl::require_form<RE::SpellItem>(Settings::pluginName, shadowOpportunistSpellID);
+        shadowOpportunistFeedbackSpell = stl::require_form<RE::SpellItem>(Settings::pluginName, shadowOpportunistFeedbackSpellID);
+        shadowOpportunistEffect = stl::require_form<RE::EffectSetting>(Settings::pluginName, shadowOpportunistEffectID);
 
-        if (const auto duration = Settings::GetSingleton()->duration; duration != Settings::GetSingleton()->defaultDuration) {
+        if (const auto duration = Settings::GetSingleton()->duration; duration != Settings::defaultDuration) {
             ModifyEffectsDuration(duration);
         }
 
@@ -163,44 +141,31 @@ namespace Hooks
         logger::info("Hooks installed successfully");
     }
 
-    [[nodiscard]] bool HasSlowTimeEffectActive() noexcept
+    [[nodiscard]] bool HasShadowOpportunistEffectActive() noexcept
     {
         auto* activeEffects = GetPlayerActiveEffects();
         if (!activeEffects)
             return false;
 
         for (const auto& effect : *activeEffects) {
-            if (effect && effect->GetBaseObject() == slowTimeEffect) {
+            if (effect && effect->GetBaseObject() == shadowOpportunistEffect) {
                 return true;
             }
         }
         return false;
     }
 
-    [[nodiscard]] bool HasAttackBonusActive() noexcept
-    {
-        return attackBonusActive.load(std::memory_order_relaxed);
-    }
-
     void SetMagicTimeSlowdown::Thunk(RE::VATS* vats, float worldMag, [[maybe_unused]] float playerMag)
     {
-        if (Settings::GetSingleton()->enableSlowTimeImmunity && HasSlowTimeEffectActive()) {
+        if (Settings::GetSingleton()->enableSlowTimeImmunity && HasShadowOpportunistEffectActive()) {
             playerMag = 1.0f;
         }
         func(vats, worldMag, playerMag);
     }
 
-    void ApplyAttackDamageBonus() noexcept
+    void Apply() noexcept
     {
-        const auto* settings = Settings::GetSingleton();
-
-        if (settings->attackDamageBonus <= 0.0f) {
-            logger::debug("Skipping attack damage bonus (value is 0 or negative)");
-            return;
-        }
-
-        if (attackBonusActive.load(std::memory_order_relaxed)) {
-            logger::debug("Attack damage bonus already active");
+        if (!ValidateGameResources() || !CheckEffectPrerequisites()) {
             return;
         }
 
@@ -208,102 +173,36 @@ namespace Hooks
         if (!player)
             return;
 
-        auto* avOwner = player->AsActorValueOwner();
-        if (!avOwner) {
-            logger::error("Invalid ActorValueOwner");
+        if (HasShadowOpportunistEffectActive()) {
+            logger::debug("Effect already active");
             return;
         }
 
-        const float current = avOwner->GetActorValue(RE::ActorValue::kAttackDamageMult);
-        const float boosted = current + settings->attackDamageBonus;
-
-        avOwner->SetActorValue(RE::ActorValue::kAttackDamageMult, boosted);
-        attackBonusActive.store(true, std::memory_order_release);
-
-        logger::debug("Applied AttackDamageMult Bonus ({}  ->  {})", current, boosted);
-    }
-
-    void RestoreAttackDamageBonus() noexcept
-    {
-        if (!attackBonusActive.load(std::memory_order_relaxed)) {
+        auto* magicCaster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant);
+        if (!magicCaster) {
+            logger::error("Invalid MagicTarget");
             return;
         }
-
-        auto* player = GetValidatedPlayer();
-        if (!player)
-            return;
-
-        auto* avOwner = player->AsActorValueOwner();
-        if (!avOwner) {
-            logger::error("Invalid ActorValueOwner");
-            return;
-        }
-
-        const float current = avOwner->GetActorValue(RE::ActorValue::kAttackDamageMult);
-        const float restored = current - Settings::GetSingleton()->attackDamageBonus;
-
-        avOwner->SetActorValue(RE::ActorValue::kAttackDamageMult, restored);
-        attackBonusActive.store(false, std::memory_order_release);
-
-        logger::debug("Restored AttackDamageMult ({}  ->  {})", current, restored);
-    }
-
-    void ApplySlowTimeEffect(RE::MagicCaster* a_magicCaster) noexcept
-    {
-        if (HasSlowTimeEffectActive()) {
-            logger::debug("Slow time effect already active");
-            return;
-        }
-
-        a_magicCaster->CastSpellImmediate(
-            slowTimeSpell,
-            !Settings::GetSingleton()->enableEffectFeedback,
-            a_magicCaster->GetCasterAsActor(),
-            1.0f,
-            false,
-            0.0f,
-            a_magicCaster->GetCasterAsActor());
-    }
-
-    void ApplyAllEffects() noexcept
-    {
-        if (!ValidateGameResources()) {
-            return;
-        }
-
-        bool canApplySlowTime, canApplyAttackBonus;
-        if (!CheckEffectPrerequisites(canApplySlowTime, canApplyAttackBonus)) {
-            return;
-        }
-
-        auto* player = GetValidatedPlayer();
-        if (!player)
-            return;
 
         if (Settings::GetSingleton()->enableEffectFeedback) {
-            if (auto* magicCaster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)) {
-                magicCaster->CastSpellImmediate(
-                    slowTimeSpellFeedback,
+            magicCaster->CastSpellImmediate(
+                    shadowOpportunistFeedbackSpell,
                     false,
                     player,
                     1.0f,
                     false,
                     0.0f,
                     player);
-            }
         }
 
-        if (canApplySlowTime) {
-            if (auto* magicCaster = player->GetMagicCaster(RE::MagicSystem::CastingSource::kInstant)) {
-                ApplySlowTimeEffect(magicCaster);
-            } else {
-                logger::error("Invalid magicCaster for slow time effect");
-            }
-        }
-
-        if (canApplyAttackBonus) {
-            ApplyAttackDamageBonus();
-        }
+        magicCaster->CastSpellImmediate(
+            shadowOpportunistSpell,
+            !Settings::GetSingleton()->enableEffectFeedback,
+            player,
+            1.0f,
+            false,
+            0.0f,
+            player);
     }
 
     void CalculateDetection::Thunk(RE::Actor* self,
@@ -320,7 +219,7 @@ namespace Hooks
         func(self, target, score, spotted, hasLOS, reason, lastPos, soundLvl, unk8, unk9);
 
         if (target && target->IsPlayerRef() && !target->IsInCombat()) {
-            if (bonusRequested.exchange(false, std::memory_order_acq_rel)) {
+            if (applyRequested.exchange(false, std::memory_order_acq_rel)) {
                 logger::debug("Combat session ended");
             }
             return;
@@ -330,10 +229,9 @@ namespace Hooks
             return;
         }
 
-        if (ShouldApplyBonus(self, target)) {
-            if (!bonusRequested.exchange(true, std::memory_order_acq_rel)) {
-                logger::debug("{} first to spot player -> applying bonus", self->GetDisplayFullName());
-                stl::add_thread_task([] { ApplyAllEffects(); }, 0ms);
+        if (ShouldApply(self, target)) {
+            if (!applyRequested.exchange(true, std::memory_order_acq_rel)) {
+                stl::add_thread_task([] { Apply(); }, 0ms);
             }
         }
     }

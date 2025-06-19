@@ -1,4 +1,3 @@
-#include "EventListener.h"
 #include "Hooks.h"
 #include "Settings.h"
 
@@ -7,7 +6,6 @@ void MessageHandler(SKSE::MessagingInterface::Message* message)
 {
     if (message->type == SKSE::MessagingInterface::kDataLoaded) {
         Hooks::Install();
-        EventListener::Register();
     }
 }
 

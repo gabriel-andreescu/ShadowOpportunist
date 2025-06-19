@@ -15,16 +15,9 @@ public:
 
         get_value(ini, debugLogging, "General", "bDebugLogging", "; Toggle debug logging");
         get_value(ini, enableEffectFeedback, "General", "bEnableEffectFeedback", "; Toggle visuals and sound");
-        get_value(ini, perkRequirement, "General", "bRequiredPerk", "; Toggle perk requirement");
-        get_value(ini, duration, "General", "iDuration", "; Duration (seconds) for attack damage bonus and slow time effect");
-
-        get_value(ini, enableAttackDamageBonus, "AttackDamageBonus", "bEnabled", "; Toggle the attack damage bonus");
-        get_value(ini, attackDamageBonus, "AttackDamageBonus", "fAttackDamageBonus", "; Amount added to AttackDamageMult (0.5 = +50%)");
-        get_value(ini, requiredPerksAttackBonus, "AttackDamageBonus", "sAttackBonusRequiredPerks", "; Perk requirements for the attack damage bonus (format: plugin|formID)");
-
-        get_value(ini, enableSlowTimeEffect, "SlowTimeEffect", "bEnabled", "; Toggle the slow time effect");
-        get_value(ini, enableSlowTimeImmunity, "SlowTimeEffect", "sSlowTimePlayerImmunity", "; Toggle player immunity to the slow time effect");
-        get_value(ini, requiredPerksSlowTime, "SlowTimeEffect", "sSlowTimeRequiredPerks", "; Perk requirements for the slow time effect (format: plugin|formID)");
+        get_value(ini, duration, "General", "iDuration", "; Duration (seconds) for the effect");
+        get_value(ini, enableSlowTimeImmunity, "General", "bSlowTimePlayerImmunity", "; Toggle player immunity to the slow time effect");
+        get_value(ini, requiredPerks, "General", "sRequiredPerks", "; Perk requirements for the effect (format: plugin|formID,plugin|formID)\n; Leave empty for no requirements");
 
         (void)ini.SaveFile(path.c_str());
     }
@@ -32,18 +25,12 @@ public:
     // members
     static constexpr uint32_t defaultDuration = 3;
     static constexpr auto pluginName = "ShadowOpportunist.esp";
+    static constexpr auto pluginNamePerk = "ShadowOpportunist_Perk.esp";
     bool debugLogging{false};
     bool enableEffectFeedback{true};
-    bool perkRequirement{true};
     uint32_t duration{defaultDuration};
-
-    bool enableAttackDamageBonus{true};
-    float attackDamageBonus{0.5f};
-    std::vector<std::pair<std::string, uint32_t>> requiredPerksAttackBonus{{pluginName, 0x5}};
-
-    bool enableSlowTimeEffect{true};
     bool enableSlowTimeImmunity{true};
-    std::vector<std::pair<std::string, uint32_t>> requiredPerksSlowTime{{pluginName, 0x6}};
+    std::vector<std::pair<std::string, uint32_t>> requiredPerks{};
 
 private:
     template <class T>
