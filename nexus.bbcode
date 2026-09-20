@@ -1,0 +1,63 @@
+[size=4][color=#00ffff]OVERVIEW[/color][/size]
+[b]Shadow Opportunist[/b] kicks in the moment you're caught sneaking, slowing time for everyone but you.
+
+
+[size=4][color=#00ffff]HOW IT WORKS[/color][/size]
+When you're sneaking and get detected during combat, time slows around you for a few seconds (3s by default).
+You remain unaffected by the slow, allowing for swift repositioning, counterattacks, or escape.
+
+You can use the effect as-is, with no perk requirements.
+Or install the optional [b]New Perk Addon[/b], which adds:
+[list]
+[*]Shadow Opportunist (requires [i]Silence[/i] and 80 Sneak) - This version only activates if you've unlocked the perk.[/*]
+[/list]
+
+
+[size=4][color=#00ffff]COMPATIBILITY[/color][/size]
+[list]
+[*]The main file should be compatible with everything.[/*]
+[*]The optional New Perk Addon has patches under Miscellaneous files.[/*]
+[/list]
+
+
+[size=4][color=#00ffff]CONFIGURATION[/color][/size]
+A user INI is generated on first launch at:
+[code]Data\MCM\Settings\ShadowOpportunist.ini[/code]
+You can change the duration, perk requirements, visual and audio feedback, and player slow-time immunity here. Changes take effect after restarting the game.
+Without the New Perk Addon, write required perks using local FormIDs without the load-order prefix, in [code]0x1234~Plugin.esp[/code] format, separated by commas. See [url=https://www.nexusmods.com/skyrimspecialedition/articles/6629]FormIDs and You[/url] for examples.
+While the New Perk Addon is enabled, it always requires its own perk instead.
+
+
+[size=4][color=#00ffff]UPDATING TO 2.0.0[/color][/size]
+Before updating, leave combat and wait for the slow-time and visual effects to finish. Save and quit the game, then install the update.
+
+Settings have moved from [code]Data\SKSE\Plugins\ShadowOpportunist.ini[/code] to the MCM settings folder shown above. Your old settings won't carry over. Configure the new INI after launching the game.
+
+
+[size=4][color=#00ffff]TODO[/color][/size]
+[list]
+[*]Optional config: trigger once per cell instead of per combat[/*]
+[*]MCM support (maybe)[/*]
+[/list]
+
+
+[size=4][color=#00ffff]REQUIREMENTS[/color][/size]
+SE/AE
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/32444]Address Library for SKSE Plugins[/url]
+
+VR (untested)
+[url=https://www.nexusmods.com/skyrimspecialedition/mods/58101]VR Address Library for SKSEVR[/url]
+
+
+[size=4][color=#00ffff]SOURCE[/color][/size]
+[url=https://github.com/gabriel-andreescu/ShadowOpportunist]github.com/gabriel-andreescu/ShadowOpportunist[/url]
+
+
+[size=4][color=#00ffff]CREDITS[/color][/size]
+[list]
+[*][url=https://github.com/alandtse/CommonLibSSE-NG]CommonLibSSE-NG[/url][/*]
+[*][url=https://github.com/powerof3/CLibUtil]CLibUtil[/url][/*]
+[*][url=https://github.com/gabriel-andreescu/BethesdaModKit]BethesdaModKit[/url][/*]
+[*][url=https://github.com/Mutagen-Modding/Mutagen]Mutagen[/url][/*]
+[*][url=https://github.com/alandtse/devbench]DevBench[/url][/*]
+[/list]
