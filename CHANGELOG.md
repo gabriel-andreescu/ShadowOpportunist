@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- Remove the obsolete INI from New Perk Addon 1.1.1
 - Keep the compiled defaults when settings files cannot be read instead of
   disabling activation
 - Resolve the slow-time hook on Skyrim VR

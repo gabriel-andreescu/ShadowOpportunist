@@ -88,7 +88,7 @@ target("ShadowOpportunist", function()
 end)
 
 target("ShadowOpportunistPerk", function()
-    set_version("1.1.0")
+    set_version("1.1.1")
     add_deps("Mutagen", { inherit = false })
     add_rules("@addon/bmk/skyrim.package", {
         package_name = "Shadow Opportunist - New Perk Addon",
