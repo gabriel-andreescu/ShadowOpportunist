@@ -1,0 +1,23 @@
+[project]
+name = "shadow-opportunist-tests"
+version = "2.0.0"
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = [
+    "bethesda-mod-kit[test] @ git+https://github.com/gabriel-andreescu/BethesdaModKit.git#subdirectory=python",
+    "ruff>=0.16.7",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/game"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = ["game: requires a running Skyrim instance with DevBench"]
+devbench_url = "http://127.0.0.1:8920"
+
+[tool.ruff]
+target-version = "py311"
+extend-exclude = ["scratch"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
