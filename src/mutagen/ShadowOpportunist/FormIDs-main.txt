@@ -1,0 +1,12 @@
+_GZ_ShadowOpportunistSpell
+2048
+_GZ_ShadowOpportunistFeedbackSpell
+2049
+_GZ_ShadowOpportunistEffect
+2050
+_GZ_ShadowOpportunistFeedbackEffect
+2051
+_GZ_ShadowOpportunistFXS
+2052
+_GZ_ShadowOpportunistHitEffect
+2053
